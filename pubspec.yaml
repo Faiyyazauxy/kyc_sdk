@@ -28,7 +28,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.dexter.kyc_sdk
+        package: com.dexter.kycsdk
         pluginClass: KycSdkPlugin
       ios:
         pluginClass: KycSdkPlugin

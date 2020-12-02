@@ -1,9 +1,9 @@
-package com.dexter.kyc_sdk
+package com.dexter.kycsdk
 
 import android.app.Activity
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatDelegate
-import com.dexter.kyc_sdk.KycSdkDelegate
+import com.dexter.kycsdk.delegate.KycSdkDelegate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.embedding.engine.plugins.activity.ActivityAware

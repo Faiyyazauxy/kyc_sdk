@@ -1,4 +1,4 @@
-group 'com.dexter.kyc_sdk'
+group 'com.dexter.kycsdk'
 version '1.0-SNAPSHOT'
 
 buildscript {
@@ -22,8 +22,8 @@ rootProject.allprojects {
         maven {
             url "https://repo.aadhaarbridge.com/repository/android-sdk/"
             credentials {
-                username ''
-                password ''
+                username 'OzellCooner'
+                password 'LuU5qd9A'
             }
         }
     }
@@ -83,4 +83,9 @@ dependencies {
     implementation 'com.khoslalabs.sdk:docselectmin:4.2.0-SB'
     implementation 'com.khoslalabs.sdk:docscanmin:4.2.0-SB'
     implementation 'com.khoslalabs.sdk:ocrsdk:4.2.0-SB'
+
+    //networking
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.6.1'
+    implementation 'com.google.code.gson:gson:2.8.6'
 }
