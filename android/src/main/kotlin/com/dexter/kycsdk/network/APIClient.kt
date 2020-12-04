@@ -2,7 +2,6 @@ package com.dexter.kycsdk.network;
 
 import android.content.Context
 import com.dexter.kycsdk.BuildConfig
-import com.dexter.kycsdk.utilities.Constants
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,7 +17,7 @@ object APIClient {
      * @param context context of the class
      * @return retrofit instance
      */
-    fun getClient(context: Context?): Retrofit? {
+    fun getClient(context: Context?, url : String): Retrofit? {
         if (retrofit == null) {
             val httpClient = OkHttpClient.Builder()
             val loggingInterceptor = HttpLoggingInterceptor()
@@ -44,7 +43,7 @@ object APIClient {
                     .setLenient()
                     .create()
             retrofit = Retrofit.Builder()
-                    .baseUrl(Constants.BASE_URL)
+                    .baseUrl(url)
                     .client(client)
                     .addConverterFactory(GsonConverterFactory.create(gson))
                     .build()

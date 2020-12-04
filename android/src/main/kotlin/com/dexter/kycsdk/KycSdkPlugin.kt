@@ -41,7 +41,7 @@ class KycSdkPlugin : MethodCallHandler, FlutterPlugin, ActivityAware {
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
     if (call.method == "kycVerification") {
-      delegate!!.startKYC(call, result)
+      delegate!!.getStatus(call, result)
     }
   }
 

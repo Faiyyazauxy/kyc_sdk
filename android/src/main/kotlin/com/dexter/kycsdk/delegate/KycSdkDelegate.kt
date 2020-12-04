@@ -3,12 +3,7 @@ package com.dexter.kycsdk.delegate
 import android.app.Activity
 import android.content.Intent
 import android.util.Base64
-import com.dexter.kycsdk.R
-import com.dexter.kycsdk.network.APIClient
-import com.dexter.kycsdk.network.APIInterface
-import com.dexter.kycsdk.network.KYCRequest
-import com.dexter.kycsdk.network.KYCResponse
-import com.dexter.kycsdk.utilities.Constants
+import com.dexter.kycsdk.network.*
 import com.khoslalabs.base.ViKycResults
 import com.khoslalabs.facesdk.FaceSdkModuleFactory
 import com.khoslalabs.ocrsdk.OcrSdkModuleFactory
@@ -30,15 +25,25 @@ import javax.net.ssl.SSLHandshakeException
 
 class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityResultListener {
     private var pendingResult: MethodChannel.Result? = null
-    fun startKYC(call: MethodCall, result: MethodChannel.Result?) {
-        pendingResult = result;
-        val requestId = UUID.randomUUID().toString()
+    private var appName: String = ""
+    private var clientCode: String = ""
+    private var url: String = ""
+    private var apiKey: String = ""
+    private var purpose: String = ""
+    private var requestId: String = ""
+    private var salt: String = ""
+    private var runMode: String = ""
+    private var sdkVersion: String = ""
+    private var functionCode: String = ""
+
+    private fun startKYC(call: MethodCall, result: MethodChannel.Result?) {
         val hash: String? = generateInitialiseHash(requestId)
 
-        val request = VideoIdKycInitRequest.Builder(Constants.CLIENT_CODE, Constants.API_KEY, "KYC", requestId, hash!!)
+        val request = VideoIdKycInitRequest.Builder(clientCode, apiKey, purpose, requestId, hash!!)
                 .moduleFactory(FaceSdkModuleFactory.newInstance())
                 .moduleFactory(OcrSdkModuleFactory.newInstance())
-                .screenTitle("App Name")
+                .plmaRequired("NO")
+                .screenTitle(appName)
                 .build()
         val myIntent = Intent(activity, VideoIdKycInitActivity::class.java)
         myIntent.putExtra("init_request", request)
@@ -50,18 +55,16 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
             if (resultCode == ViKycResults.RESULT_OK || resultCode == ViKycResults.RESULT_DOC_COMPLETE) {
                 if (data != null) {
                     val id = data.getStringExtra("user_id")
-                    return if (!id.equals("", ignoreCase = true)) {
+                    if (!id.equals("", ignoreCase = true)) {
                         callKycAPI(id);
-                        true
                     } else {
-                        false
+                        finishWithError("No Data Found")
                     }
                 }
             } else {
                 if (data != null) {
                     val error = data.getStringExtra("error_message")
                     finishWithError(error!!)
-                    return false
                 }
             }
         }
@@ -71,9 +74,9 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
     private fun callKycAPI(id: String?) {
         val hash: String = generateRequestHash(id!!)!!
         val requestID = UUID.randomUUID().toString()
-        val apiInterface: APIInterface = APIClient.getClient(activity)!!.create(APIInterface::class.java)
-        val headersBean: KYCRequest.HeadersBean = KYCRequest.HeadersBean(Constants.CLIENT_CODE, Constants.CLIENT_CODE, "CUSTOMER", "ANDROID_SDK", requestID, "EMAIL", Constants.EMAIL, "", System.currentTimeMillis().toString(), Constants.RUN_MODE, "", "SELF", Constants.SDK_VERSION, Constants.FUNCTION_CODE, Constants.FUNCTION_CODE)
-        apiInterface.postKyc(KYCRequest(headersBean, KYCRequest.RequestBean(Constants.API_KEY, requestID, id, hash)))!!.enqueue(object : Callback<KYCResponse?> {
+        val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
+        val headersBean: KYCRequest.HeadersBean = KYCRequest.HeadersBean(clientCode, clientCode, "CUSTOMER", "ANDROID_SDK", requestID, "DEFAULT", "DEFAULT", "", System.currentTimeMillis().toString(), runMode, "", "SELF", sdkVersion, functionCode, functionCode)
+        apiInterface.postKyc(KYCRequest(headersBean, KYCRequest.RequestBean(apiKey, requestID, id, hash)))!!.enqueue(object : Callback<KYCResponse?> {
             override fun onResponse(call: Call<KYCResponse?>?, response: Response<KYCResponse?>) {
                 if (response.isSuccessful) {
                     val kycResponse: KYCResponse? = response.body()
@@ -88,6 +91,81 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
             }
 
             override fun onFailure(call: Call<KYCResponse?>?, t: Throwable) {
+                return when (t) {
+                    is SSLHandshakeException -> {
+                        finishWithError("Your wifi firewall may be blocking your access to our service. Please switch your internet connection")
+                    }
+                    is TimeoutException -> {
+                        finishWithError("There seems to be an error with your connection")
+                    }
+                    else -> {
+                        finishWithError("You are not connected to the Internet")
+                    }
+                }
+            }
+        })
+    }
+
+    private fun generateInitialiseHash(requestId: String): String? {
+        //<client_code>|<request_id>|<api_key>|<salt>
+        val md: MessageDigest
+        try {
+            md = MessageDigest.getInstance("SHA-256")
+            val text = "$clientCode|$requestId|$apiKey|$salt"
+            // Change this to UTF-16 if needed
+            md.update(text.toByteArray(StandardCharsets.UTF_8))
+            val digest = md.digest()
+            return String.format("%064x", BigInteger(1, digest))
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+        }
+        return ""
+    }
+
+    private fun generateRequestHash(userId: String): String? {
+        val md: MessageDigest
+        try {
+            md = MessageDigest.getInstance("SHA-256")
+            val text = "$clientCode|$userId|$apiKey|$salt"
+            // Change this to UTF-16 if needed
+            md.update(text.toByteArray(StandardCharsets.UTF_8))
+            val digest = md.digest()
+            return String.format("%064x", BigInteger(1, digest))
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+        }
+        return ""
+    }
+
+    fun getStatus(methodCall: MethodCall, result: MethodChannel.Result?) {
+
+        pendingResult = result
+
+        appName = methodCall.argument("app_name")!!
+        url = methodCall.argument("url")!!
+        clientCode = methodCall.argument("client_code")!!
+        apiKey = methodCall.argument("api_key")!!
+        purpose = methodCall.argument("purpose")!!
+        requestId = methodCall.argument("request_id")!!
+        salt = methodCall.argument("salt")!!
+        runMode = methodCall.argument("run_mode")!!
+        sdkVersion = methodCall.argument("sdk_version")!!
+        functionCode = methodCall.argument("function_code")!!
+
+        val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
+        apiInterface.getStatus()!!.enqueue(object : Callback<UIDAIResponse?> {
+            override fun onResponse(call: Call<UIDAIResponse?>?, response: Response<UIDAIResponse?>) {
+                if (response.isSuccessful) {
+                    val statusResponse: UIDAIResponse? = response.body()
+                    if (statusResponse != null) {
+                        if (statusResponse.status == "SUCCESS") {
+                            startKYC(methodCall, result)
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<UIDAIResponse?>?, t: Throwable) {
                 return when (t) {
                     is SSLHandshakeException -> {
                         finishWithError("Your wifi firewall may be blocking your access to our service. Please switch your internet connection")
@@ -120,38 +198,6 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
     private fun clearMethodCallAndResult() {
         pendingResult = null
     }
-
-    private fun generateInitialiseHash(requestId: String): String? {
-        //<client_code>|<request_id>|<api_key>|<salt>
-        val md: MessageDigest
-        try {
-            md = MessageDigest.getInstance("SHA-256")
-            val text: String = Constants.CLIENT_CODE + "|" + requestId + "|" + Constants.API_KEY + "|" + Constants.SALT
-            // Change this to UTF-16 if needed
-            md.update(text.toByteArray(StandardCharsets.UTF_8))
-            val digest = md.digest()
-            return String.format("%064x", BigInteger(1, digest))
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-        }
-        return ""
-    }
-
-    private fun generateRequestHash(userId: String): String? {
-        val md: MessageDigest
-        try {
-            md = MessageDigest.getInstance("SHA-256")
-            val text = Constants.CLIENT_CODE + "|" + userId + "|" + Constants.API_KEY + "|" + Constants.SALT
-            // Change this to UTF-16 if needed
-            md.update(text.toByteArray(StandardCharsets.UTF_8))
-            val digest = md.digest()
-            return String.format("%064x", BigInteger(1, digest))
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-        }
-        return ""
-    }
-
 
     companion object {
         private const val INIT_REQUEST_CODE = 1001
