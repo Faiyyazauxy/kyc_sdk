@@ -160,6 +160,8 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                     if (statusResponse != null) {
                         if (statusResponse.status == "SUCCESS") {
                             startKYC(methodCall, result)
+                        } else {
+                            finishWithError("Currently Aadhaar service is down")
                         }
                     }
                 }
