@@ -36,7 +36,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
     private var sdkVersion: String = ""
     private var functionCode: String = ""
 
-    private fun startKYC(call: MethodCall, result: MethodChannel.Result?) {
+    private fun startKYC() {
         val hash: String? = generateInitialiseHash(requestId)
 
         val request = VideoIdKycInitRequest.Builder(clientCode, apiKey, purpose, requestId, hash!!)
@@ -159,7 +159,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                     val statusResponse: UIDAIResponse? = response.body()
                     if (statusResponse != null) {
                         if (statusResponse.status == "SUCCESS") {
-                            startKYC(methodCall, result)
+                            startKYC()
                         } else {
                             finishWithError("Currently Aadhaar service is down")
                         }
