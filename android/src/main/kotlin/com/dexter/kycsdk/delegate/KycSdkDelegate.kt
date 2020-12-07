@@ -75,13 +75,13 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
         val hash: String = generateRequestHash(id!!)!!
         val requestID = UUID.randomUUID().toString()
         val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
-        val headersBean: KYCRequest.HeadersBean = KYCRequest.HeadersBean(clientCode, clientCode, "CUSTOMER", "ANDROID_SDK", requestID, "DEFAULT", "DEFAULT", "", System.currentTimeMillis().toString(), runMode, "", "SELF", sdkVersion, functionCode, functionCode)
-        apiInterface.postKyc(KYCRequest(headersBean, KYCRequest.RequestBean(apiKey, requestID, id, hash)))!!.enqueue(object : Callback<KYCResponse?> {
+        val headersBean = Headers(clientCode, clientCode, "CUSTOMER", "ANDROID_SDK", requestID, "DEFAULT", "DEFAULT", "", System.currentTimeMillis().toString(), runMode, "", "SELF", sdkVersion, functionCode, functionCode)
+        apiInterface.postKyc(KYCRequest(headersBean, Request(apiKey, requestID, id, hash)))!!.enqueue(object : Callback<KYCResponse?> {
             override fun onResponse(call: Call<KYCResponse?>?, response: Response<KYCResponse?>) {
                 if (response.isSuccessful) {
                     val kycResponse: KYCResponse? = response.body()
                     if (kycResponse != null) {
-                        val data: ByteArray = Base64.decode(kycResponse.response_data!!.kyc_info, Base64.DEFAULT)
+                        val data: ByteArray = Base64.decode(kycResponse.responseData.kycInfo, Base64.DEFAULT)
                         val text = String(data, StandardCharsets.UTF_8)
                         finishWithSuccess(text)
                     } else {
@@ -161,7 +161,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                         if (statusResponse.status == "SUCCESS") {
                             startKYC()
                         } else {
-                            finishWithError("Currently Aadhaar service is down")
+                            finishWithError(statusResponse.message)
                         }
                     }
                 }

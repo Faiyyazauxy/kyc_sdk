@@ -1,7 +1,12 @@
 package com.dexter.kycsdk.network
 
-class UIDAIResponse {
-    var code: String? = null
-    var status: String? = null
-    var message: String? = null
-}
+import com.google.gson.annotations.SerializedName
+
+data class UIDAIResponse(
+        @SerializedName("status")
+        val status: String,
+        @SerializedName("code")
+        val code: String,
+        @SerializedName("message")
+        val message: String
+)
