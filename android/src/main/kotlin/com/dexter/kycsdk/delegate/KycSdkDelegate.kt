@@ -23,6 +23,7 @@ import java.util.*
 import java.util.concurrent.TimeoutException
 import javax.net.ssl.SSLHandshakeException
 
+
 class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityResultListener {
     private var pendingResult: MethodChannel.Result? = null
     private var appName: String = ""
@@ -81,9 +82,13 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                 if (response.isSuccessful) {
                     val kycResponse: KYCResponse? = response.body()
                     if (kycResponse != null) {
-                        val data: ByteArray = Base64.decode(kycResponse.responseData.kycInfo, Base64.DEFAULT)
-                        val text = String(data, StandardCharsets.UTF_8)
-                        finishWithSuccess(text)
+                        if (kycResponse.responseStatus.status == "SUCCESS") {
+                            val data: ByteArray = Base64.decode(kycResponse.responseData.kycInfo, Base64.DEFAULT)
+                            val text = String(data, StandardCharsets.UTF_8)
+                            finishWithSuccess(text)
+                        } else {
+                            finishWithError(kycResponse.responseStatus.message)
+                        }
                     } else {
                         finishWithError("Some error occurred")
                     }
