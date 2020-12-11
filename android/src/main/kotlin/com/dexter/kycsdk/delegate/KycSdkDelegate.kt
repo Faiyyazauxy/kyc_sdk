@@ -83,7 +83,8 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                     val kycResponse: KYCResponse? = response.body()
                     if (kycResponse != null) {
                         if (kycResponse.responseStatus.status == "SUCCESS") {
-                            val text: String = Gson().toJson(kycResponse)
+                            val data: ByteArray = Base64.decode(kycResponse.responseData.kycInfo, Base64.DEFAULT)
+                            val text = String(data, StandardCharsets.UTF_8)
                             finishWithSuccess(text)
                         } else {
                             finishWithError(kycResponse.responseStatus.message)

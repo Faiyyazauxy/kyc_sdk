@@ -11,7 +11,7 @@ data class KYCResponse(
 )
 
 data class ResponseData(
-        @SerializedName("encrypted")
+        @SerializedName("is_encrypted")
         val encrypted: String,
 
         @SerializedName("kyc_info")
