@@ -76,8 +76,8 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
         val hash: String = generateRequestHash(id!!)!!
         val requestID = UUID.randomUUID().toString()
         val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
-        val headersBean = Headers(clientCode, clientCode, "CUSTOMER", "ANDROID_SDK", requestID, "DEFAULT", "DEFAULT", "", System.currentTimeMillis().toString(), runMode, "", "SELF", sdkVersion, functionCode, functionCode)
-        apiInterface.postKyc(KYCRequest(headersBean, Request(apiKey, requestID, id, hash)))!!.enqueue(object : Callback<KYCResponse?> {
+        val headersBean = Headers(clientCode, requestID, "TRAIL", "REVISED", functionCode)
+        apiInterface.postKyc(KYCRequest(headersBean, Request(apiKey, id, hash)))!!.enqueue(object : Callback<KYCResponse?> {
             override fun onResponse(call: Call<KYCResponse?>?, response: Response<KYCResponse?>) {
                 if (response.isSuccessful) {
                     val kycResponse: KYCResponse? = response.body()
