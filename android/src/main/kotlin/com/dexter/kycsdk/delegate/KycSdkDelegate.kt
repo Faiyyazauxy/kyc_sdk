@@ -22,7 +22,7 @@ import java.security.NoSuchAlgorithmException
 import java.util.*
 import java.util.concurrent.TimeoutException
 import javax.net.ssl.SSLHandshakeException
-
+import com.google.gson.Gson;
 
 class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityResultListener {
     private var pendingResult: MethodChannel.Result? = null
@@ -83,8 +83,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                     val kycResponse: KYCResponse? = response.body()
                     if (kycResponse != null) {
                         if (kycResponse.responseStatus.status == "SUCCESS") {
-                            val data: ByteArray = Base64.decode(kycResponse.responseData.kycInfo, Base64.DEFAULT)
-                            val text = String(data, StandardCharsets.UTF_8)
+                            val text: String = Gson().toJson(kycResponse)
                             finishWithSuccess(text)
                         } else {
                             finishWithError(kycResponse.responseStatus.message)
