@@ -56,8 +56,12 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
             if (resultCode == ViKycResults.RESULT_OK || resultCode == ViKycResults.RESULT_DOC_COMPLETE) {
                 if (data != null) {
                     val id = data.getStringExtra("user_id")
-                    if (!id.equals("", ignoreCase = true)) {
-                        finishWithSuccess(id!!)
+                    if(id != null) {
+                        if (!id.equals("", ignoreCase = true)) {
+                            finishWithSuccess(id)
+                        } else {
+                            finishWithError("No Data Found")
+                        }
                     } else {
                         finishWithError("No Data Found")
                     }
