@@ -69,7 +69,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
             } else {
                 if (data != null) {
                     val error = data.getStringExtra("error_message")
-                    finishWithError("not getting id from sdk : \t" + error!!)
+                    finishWithError(error!!)
                 }
             }
         }
@@ -90,7 +90,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                             val text = String(data, StandardCharsets.UTF_8)
                             finishWithSuccess(text)
                         } else {
-                            finishWithError("issue while fetching info : \t" + kycResponse.responseStatus.message)
+                            finishWithError( kycResponse.responseStatus.message)
                         }
                     } else {
                         finishWithError("Some error occurred")
