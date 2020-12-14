@@ -57,7 +57,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                 if (data != null) {
                     val id = data.getStringExtra("user_id")
                     if (!id.equals("", ignoreCase = true)) {
-                        callKycAPI(id);
+                        finishWithSuccess(id!!)
                     } else {
                         finishWithError("No Data Found")
                     }
