@@ -198,7 +198,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                 if (data != null) {
                     val userId = data.getStringExtra("user_id")
                     return if (userId != null) {
-                        finishWithSuccess(userId)
+                        callKycAPI(userId)
                         true
                     } else {
                         finishWithError("Null user ID")
