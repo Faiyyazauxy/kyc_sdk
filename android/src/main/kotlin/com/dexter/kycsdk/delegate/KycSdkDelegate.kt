@@ -109,35 +109,37 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
         sdkVersion = methodCall.argument("sdk_version")!!
         functionCode = methodCall.argument("function_code")!!
 
-        val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
-        apiInterface.getStatus()!!.enqueue(object : Callback<UIDAIResponse?> {
-            override fun onResponse(call: Call<UIDAIResponse?>?, response: Response<UIDAIResponse?>) {
-                if (response.isSuccessful) {
-                    val statusResponse: UIDAIResponse? = response.body()
-                    if (statusResponse != null) {
-                        if (statusResponse.status == "SUCCESS") {
-                            startKYC()
-                        } else {
-                            finishWithError(statusResponse.message)
-                        }
-                    }
-                }
-            }
+        startKYC();
 
-            override fun onFailure(call: Call<UIDAIResponse?>?, t: Throwable) {
-                return when (t) {
-                    is SSLHandshakeException -> {
-                        finishWithError("Your wifi firewall may be blocking your access to our service. Please switch your internet connection")
-                    }
-                    is TimeoutException -> {
-                        finishWithError("There seems to be an error with your connection")
-                    }
-                    else -> {
-                        finishWithError("You are not connected to the Internet")
-                    }
-                }
-            }
-        })
+//        val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
+//        apiInterface.getStatus()!!.enqueue(object : Callback<UIDAIResponse?> {
+//            override fun onResponse(call: Call<UIDAIResponse?>?, response: Response<UIDAIResponse?>) {
+//                if (response.isSuccessful) {
+//                    val statusResponse: UIDAIResponse? = response.body()
+//                    if (statusResponse != null) {
+//                        if (statusResponse.status == "SUCCESS") {
+//                            startKYC()
+//                        } else {
+//                            finishWithError(statusResponse.message)
+//                        }
+//                    }
+//                }
+//            }
+//
+//            override fun onFailure(call: Call<UIDAIResponse?>?, t: Throwable) {
+//                return when (t) {
+//                    is SSLHandshakeException -> {
+//                        finishWithError("Your wifi firewall may be blocking your access to our service. Please switch your internet connection")
+//                    }
+//                    is TimeoutException -> {
+//                        finishWithError("There seems to be an error with your connection")
+//                    }
+//                    else -> {
+//                        finishWithError("You are not connected to the Internet")
+//                    }
+//                }
+//            }
+//        })
     }
 
     private fun finishWithSuccess(data: String) {
