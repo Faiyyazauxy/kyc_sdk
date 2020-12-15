@@ -31,55 +31,36 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
     private var url: String = ""
     private var apiKey: String = ""
     private var purpose: String = ""
-    private var requestId: String = ""
+    private var requestID: String = ""
     private var salt: String = ""
     private var runMode: String = ""
     private var sdkVersion: String = ""
     private var functionCode: String = ""
 
     private fun startKYC() {
-        val hash: String? = generateInitialiseHash(requestId)
-
-        val request = VideoIdKycInitRequest.Builder(clientCode, apiKey, purpose, requestId, hash!!)
-                .moduleFactory(FaceSdkModuleFactory.newInstance())
-                .moduleFactory(OcrSdkModuleFactory.newInstance())
+        requestID = UUID.randomUUID().toString()
+        val hash: String = generateInitialiseHash(requestID)
+        val videoIdKycInitRequest = VideoIdKycInitRequest.Builder(
+                clientCode,
+                apiKey,
+                purpose,
+                requestID,
+                hash
+        )
                 .plmaRequired("NO")
-                .screenTitle(appName)
+                .moduleFactory(OcrSdkModuleFactory.newInstance())
+                .moduleFactory(FaceSdkModuleFactory.newInstance())
                 .build()
+
         val myIntent = Intent(activity, VideoIdKycInitActivity::class.java)
-        myIntent.putExtra("init_request", request)
+        myIntent.putExtra("init_request", videoIdKycInitRequest)
         activity.startActivityForResult(myIntent, INIT_REQUEST_CODE)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        if (requestCode == INIT_REQUEST_CODE) {
-            if (resultCode == ViKycResults.RESULT_OK || resultCode == ViKycResults.RESULT_DOC_COMPLETE) {
-                if (data != null) {
-                    val id = data.getStringExtra("user_id")
-                    if(id != null) {
-                        if (!id.equals("", ignoreCase = true)) {
-                            finishWithSuccess(id)
-                        } else {
-                            finishWithError("No Data Found")
-                        }
-                    } else {
-                        finishWithError("No Data Found")
-                    }
-                }
-            } else {
-                if (data != null) {
-                    val error = data.getStringExtra("error_message")
-                    finishWithError(error!!)
-                }
-            }
-        }
-        return false
-    }
-
-    private fun callKycAPI(id: String?) {
-        val hash: String = generateRequestHash(id!!)!!
+    private fun callKycAPI(id: String) {
+        val hash: String = generateRequestHash(id)
         val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
-        val headersBean = Headers(clientCode, requestId, runMode, "REVISED", functionCode)
+        val headersBean = Headers(clientCode, requestID, runMode, "REVISED", functionCode)
         apiInterface.postKyc(KYCRequest(headersBean, Request(apiKey, id, hash)))!!.enqueue(object : Callback<KYCResponse?> {
             override fun onResponse(call: Call<KYCResponse?>?, response: Response<KYCResponse?>) {
                 if (response.isSuccessful) {
@@ -114,37 +95,6 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
         })
     }
 
-    private fun generateInitialiseHash(requestId: String): String? {
-        //<client_code>|<request_id>|<api_key>|<salt>
-        val md: MessageDigest
-        try {
-            md = MessageDigest.getInstance("SHA-256")
-            val text = "$clientCode|$requestId|$apiKey|$salt"
-            // Change this to UTF-16 if needed
-            md.update(text.toByteArray(StandardCharsets.UTF_8))
-            val digest = md.digest()
-            return String.format("%064x", BigInteger(1, digest))
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-        }
-        return ""
-    }
-
-    private fun generateRequestHash(userId: String): String? {
-        val md: MessageDigest
-        try {
-            md = MessageDigest.getInstance("SHA-256")
-            val text = "$clientCode|$userId|$apiKey|$salt"
-            // Change this to UTF-16 if needed
-            md.update(text.toByteArray(StandardCharsets.UTF_8))
-            val digest = md.digest()
-            return String.format("%064x", BigInteger(1, digest))
-        } catch (e: NoSuchAlgorithmException) {
-            e.printStackTrace()
-        }
-        return ""
-    }
-
     fun getStatus(methodCall: MethodCall, result: MethodChannel.Result?) {
 
         pendingResult = result
@@ -154,7 +104,6 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
         clientCode = methodCall.argument("client_code")!!
         apiKey = methodCall.argument("api_key")!!
         purpose = methodCall.argument("purpose")!!
-        requestId = methodCall.argument("request_id")!!
         salt = methodCall.argument("salt")!!
         runMode = methodCall.argument("run_mode")!!
         sdkVersion = methodCall.argument("sdk_version")!!
@@ -207,6 +156,69 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
 
     private fun clearMethodCallAndResult() {
         pendingResult = null
+    }
+
+    private fun generateRequestHash(userId: String): String {
+        val md: MessageDigest
+        try {
+            md = MessageDigest.getInstance("SHA-256")
+            val text =
+                    "$clientCode|$userId|$apiKey|$salt"
+            // Change this to UTF-16 if needed
+            md.update(text.toByteArray(StandardCharsets.UTF_8))
+            val digest: ByteArray = md.digest()
+            return java.lang.String.format("%064x", BigInteger(1, digest))
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+        }
+        return ""
+    }
+
+
+    private fun generateInitialiseHash(requestId: String): String {
+        //<client_code>|<request_id>|<api_key>|<salt>
+        val md: MessageDigest
+        try {
+            md = MessageDigest.getInstance("SHA-256")
+            val text =
+                    "$clientCode|$requestId|$apiKey|$salt"
+            // Change this to UTF-16 if needed
+            md.update(text.toByteArray(StandardCharsets.UTF_8))
+            val digest: ByteArray = md.digest()
+            return java.lang.String.format("%064x", BigInteger(1, digest))
+        } catch (e: NoSuchAlgorithmException) {
+            e.printStackTrace()
+        }
+        return ""
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == INIT_REQUEST_CODE) {
+            if (resultCode == ViKycResults.RESULT_OK || resultCode == ViKycResults.RESULT_DOC_COMPLETE) {
+                if (data != null) {
+                    val userId = data.getStringExtra("user_id")
+                    return if (userId != null) {
+                        finishWithSuccess(userId)
+                        true
+                    } else {
+                        finishWithError("Null user ID")
+                        false
+                    }
+                }
+            } else {
+                if (data != null) {
+                    val error = data.getStringExtra("error_message")
+                    return if (error != null) {
+                        finishWithError(error)
+                        false
+                    } else {
+                        finishWithError("Some error occurred")
+                        false
+                    }
+                }
+            }
+        }
+        return false
     }
 
     companion object {
