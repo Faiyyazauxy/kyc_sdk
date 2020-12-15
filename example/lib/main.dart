@@ -40,7 +40,7 @@ class _MyAppState extends State<MyApp> {
                     apiKey: 'FM63634NF',
                     purpose: 'kyc',
                     salt: 'r84734475',
-                    runMode: 'TRAIL',
+                    runMode: 'TRIAL',
                     sdkVersion: '4.2.0',
                     functionCode: 'REVISED',
                   ),
