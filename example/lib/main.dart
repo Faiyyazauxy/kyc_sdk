@@ -39,7 +39,6 @@ class _MyAppState extends State<MyApp> {
                     clientCode: 'OZEL6526',
                     apiKey: 'FM63634NF',
                     purpose: 'kyc',
-                    requestId: Uuid().v1(),
                     salt: 'r84734475',
                     runMode: 'TRAIL',
                     sdkVersion: '4.2.0',
