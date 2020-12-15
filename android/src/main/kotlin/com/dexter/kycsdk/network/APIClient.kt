@@ -9,6 +9,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.lang.reflect.Modifier
+import java.util.concurrent.TimeUnit
 
 object APIClient {
     private var retrofit: Retrofit? = null
@@ -20,6 +21,9 @@ object APIClient {
     fun getClient(context: Context?, url : String): Retrofit? {
         if (retrofit == null) {
             val httpClient = OkHttpClient.Builder()
+            httpClient.connectTimeout(120, TimeUnit.SECONDS)
+            httpClient.readTimeout(120, TimeUnit.SECONDS)
+            httpClient.writeTimeout(120, TimeUnit.SECONDS)
             val loggingInterceptor = HttpLoggingInterceptor()
             if (BuildConfig.DEBUG) {
                 //print the logs in this case

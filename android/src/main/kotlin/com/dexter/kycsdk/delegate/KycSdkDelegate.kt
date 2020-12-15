@@ -22,7 +22,6 @@ import java.security.NoSuchAlgorithmException
 import java.util.*
 import java.util.concurrent.TimeoutException
 import javax.net.ssl.SSLHandshakeException
-import com.google.gson.Gson;
 
 class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityResultListener {
     private var pendingResult: MethodChannel.Result? = null
@@ -87,6 +86,9 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                     is TimeoutException -> {
                         finishWithError("There seems to be an error with your connection")
                     }
+                    is java.net.SocketTimeoutException -> {
+                        finishWithError("There seems to be an error with your connection")
+                    }
                     else -> {
                         finishWithError("You are not connected to the Internet")
                     }
@@ -109,37 +111,38 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
         sdkVersion = methodCall.argument("sdk_version")!!
         functionCode = methodCall.argument("function_code")!!
 
-        startKYC();
+        val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
+        apiInterface.getStatus()!!.enqueue(object : Callback<UIDAIResponse?> {
+            override fun onResponse(call: Call<UIDAIResponse?>?, response: Response<UIDAIResponse?>) {
+                if (response.isSuccessful) {
+                    val statusResponse: UIDAIResponse? = response.body()
+                    if (statusResponse != null) {
+                        if (statusResponse.status == "SUCCESS") {
+                            startKYC()
+                        } else {
+                            finishWithError(statusResponse.message)
+                        }
+                    }
+                }
+            }
 
-//        val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
-//        apiInterface.getStatus()!!.enqueue(object : Callback<UIDAIResponse?> {
-//            override fun onResponse(call: Call<UIDAIResponse?>?, response: Response<UIDAIResponse?>) {
-//                if (response.isSuccessful) {
-//                    val statusResponse: UIDAIResponse? = response.body()
-//                    if (statusResponse != null) {
-//                        if (statusResponse.status == "SUCCESS") {
-//                            startKYC()
-//                        } else {
-//                            finishWithError(statusResponse.message)
-//                        }
-//                    }
-//                }
-//            }
-//
-//            override fun onFailure(call: Call<UIDAIResponse?>?, t: Throwable) {
-//                return when (t) {
-//                    is SSLHandshakeException -> {
-//                        finishWithError("Your wifi firewall may be blocking your access to our service. Please switch your internet connection")
-//                    }
-//                    is TimeoutException -> {
-//                        finishWithError("There seems to be an error with your connection")
-//                    }
-//                    else -> {
-//                        finishWithError("You are not connected to the Internet")
-//                    }
-//                }
-//            }
-//        })
+            override fun onFailure(call: Call<UIDAIResponse?>?, t: Throwable) {
+                return when (t) {
+                    is SSLHandshakeException -> {
+                        finishWithError("Your wifi firewall may be blocking your access to our service. Please switch your internet connection")
+                    }
+                    is TimeoutException -> {
+                        finishWithError("There seems to be an error with your connection")
+                    }
+                    is java.net.SocketTimeoutException -> {
+                        finishWithError("There seems to be an error with your connection")
+                    }
+                    else -> {
+                        finishWithError("You are not connected to the Internet")
+                    }
+                }
+            }
+        })
     }
 
     private fun finishWithSuccess(data: String) {
