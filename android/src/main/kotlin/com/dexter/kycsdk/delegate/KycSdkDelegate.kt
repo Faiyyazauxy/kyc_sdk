@@ -59,8 +59,6 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
     private fun callKycAPI(id: String) {
         val hash: String = generateRequestHash(id)
         val apiInterface: APIInterface = APIClient.getClient(activity, url)!!.create(APIInterface::class.java)
-        val headersBean = Headers(clientCode, requestID, runMode, "REVISED", functionCode)
-
         val headersBean = Headers(
                 clientCode,
                 clientCode,
