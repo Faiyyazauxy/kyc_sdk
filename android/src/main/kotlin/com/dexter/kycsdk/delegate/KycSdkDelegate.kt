@@ -74,7 +74,7 @@ class KycSdkDelegate(private val activity: Activity) : PluginRegistry.ActivityRe
                 "SELF",
                 sdkVersion,
                 functionCode,
-                functionCode,
+                functionCode
         )
 
         val request = Request(apiKey, id, hash);
